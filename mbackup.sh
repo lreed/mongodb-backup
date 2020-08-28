@@ -4,8 +4,15 @@ set -eo pipefail # Fail fast
 # Setup Details
 # Setup users for backup
 # Setup GPG Key
+# Setup Backup Directory
+## sudo mkdir -p /var/backups/mongodb
+## chown mbackup:mbackup /var/backups/mongodb
 # Desing notes
 ## using a combination of piped commands to reduce unencrypted files and reduce disk space usage etc. 
+
+# TODO
+# Add List option
+# Add option to make output quiet
 
 # Set defaults
 DBHOST="127.0.0.1"
@@ -17,7 +24,8 @@ DBPORT="27017"
 BACKUPDIR="/var/backups/mongodb"
 
 
-
+# Should really do this
+# also need to have a way to use a secure file for dbpassword 
 # could also add the code here to pull configs from a config file
 # External config - override default values set above
 for x in default sysconfig; do
@@ -55,6 +63,16 @@ while test $# -gt 0; do
       COLLECTION=$1
       shift
       ;;
+    -dbuser)
+      shift
+      DBUSERNAME=$1
+      shift
+      ;;
+    -dbauthdb)
+      shift
+      DBAUTHDB=$1
+      shift
+      ;;
     -prefix)
       shift
       PREFIX=$1
@@ -74,8 +92,10 @@ done
 
 # Do we need to use a username/password?
 if [ "$DBUSERNAME" ]; then
-    OPT="$OPT --username=$DBUSERNAME --password=$DBPASSWORD"
-    if [ "$REQUIREDBAUTHDB" = "yes" ]; then
+    #OPT="$OPT --username=$DBUSERNAME --password=$DBPASSWORD"
+    OPT="$OPT --username=$DBUSERNAME" # Should ask for password
+    # Should have a way to pull this from a more secure file.
+    if [ "DBAUTHDB" ]; then
         OPT="$OPT --authenticationDatabase=$DBAUTHDB"
     fi
 fi
@@ -102,12 +122,19 @@ fi
 # add hostname to backup file name?
 
 
-# Create required directories
-#mkdir -p $BACKUPDIR/{hourly,daily,weekly,monthly} || shellout 'failed to create directories'
+# Check required directories
+if [ ! -d "${BACKUPDIR}" ] ; then
+  echo "${BACKUPDIR} does not exist.  Please please create the directory with write permissions for user $(whoami)before proceeding"
+  exit 1
+fi 
+
+if [ ! -w "${BACKUPDIR}" ]; then 
+	echo "${BACKUPDIR} is not writable by $(whoami). Please please create the directory with write permissions for user $(whoami) before proceeding" 
+  exit 1 
+fi 
 
 echo "will run mongodump -h ${DBHOST}:${DBPORT} ${OPT} --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' -o ${BACKUPFILE}-`date +%Y-%m-%d-%H-%M-%S`.gpg"
 
-echo "QUERY is $QUERY"
 
 
 echo
@@ -117,6 +144,16 @@ echo ======================================================================
 echo "Backup Start $(date)"
 echo ======================================================================
 
+FULLFILEPATH="${BACKUPDIR}/${BACKUPFILE}-`date +%Y-%m-%d-%H-%M-%S`.gpg"
+
+mongodump -h ${DBHOST}:${DBPORT} ${OPT} --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' -o ${FULLFILEPATH} 
+
+if [ $? -eq 0 ] ; then 
+  echo "${FULLFILEPATH} was backed up"
+else 
+  echo "There as a problem with the backup"
+fi
+
 #mongodump -h 192.168.1.198 --authenticationDatabase "admin" --username=druser --db=exercise --collection=answers --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' -o mongobackup-`date +%Y-%m-%d-%H-%M-%S`.gpg
 
 
@@ -125,7 +162,7 @@ echo ======================================================================
 
 
 
-# Refrences
+# References
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash
 # https://google.github.io/styleguide/shellguide.html
 # https://severalnines.com/database-blog/database-backup-encryption-best-practices
