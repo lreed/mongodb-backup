@@ -4,6 +4,8 @@ set -eo pipefail # Fail fast
 # Setup Details
 # Setup users for backup
 # Setup GPG Key
+# Desing notes
+## using a combination of piped commands to reduce unencrypted files and reduce disk space usage etc. 
 
 # Set defaults
 DBHOST="127.0.0.1"
@@ -20,8 +22,8 @@ BACKUPDIR="/var/backups/mongodb"
 # External config - override default values set above
 for x in default sysconfig; do
   if [ -f "/etc/$x/automongobackup" ]; then
-      # shellcheck source=/dev/null
-      source /etc/$x/automongobackup
+    # shellcheck source=/dev/null
+    source /etc/$x/automongobackup
   fi
 done
 
@@ -41,6 +43,21 @@ while test $# -gt 0; do
     -dbport)
       shift
       DBPORT=$1
+      shift
+      ;;
+    -database)
+      shift
+      DBNAME=$1
+      shift
+      ;;
+    -collection)
+      shift
+      COLLECTION=$1
+      shift
+      ;;
+    -prefix)
+      shift
+      PREFIX=$1
       shift
       ;;
     *)
@@ -63,16 +80,22 @@ if [ "$DBUSERNAME" ]; then
     fi
 fi
 
+if [ "${PREFIX}" ] ; then 
+  BACKUPFILE="${PREFIX}-${DBHOST}"
+else
+  BACKUPFILE="${DBHOST}"
+fi
+
 # Do we need to backup only a specific database?
 if [ "$DBNAME" ]; then
   OPT="$OPT -d $DBNAME"
+  BACKUPFILE="${BACKUPFILE}-${DBNAME}"
 fi
 
-# Do we need to backup only a specific collections?
-if [ "$COLLECTIONS" ]; then
-  for x in $COLLECTIONS; do
-    OPT="$OPT --collection $x"
-  done
+# Do we need to backup only a specific collection?
+if [ "$COLLECTION" ]; then
+  OPT="$OPT --collection $COLLECTION"
+  BACKUPFILE="${BACKUPFILE}-${COLLECTION}"
 fi
 
 
@@ -82,7 +105,7 @@ fi
 # Create required directories
 #mkdir -p $BACKUPDIR/{hourly,daily,weekly,monthly} || shellout 'failed to create directories'
 
-echo "will run mongodump -h $DBHOST:$DBPORT $QUERY --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' -o mongobackup-`date +%Y-%m-%d-%H-%M-%S`.gpg"
+echo "will run mongodump -h ${DBHOST}:${DBPORT} ${OPT} --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' -o ${BACKUPFILE}-`date +%Y-%m-%d-%H-%M-%S`.gpg"
 
 echo "QUERY is $QUERY"
 
@@ -94,7 +117,7 @@ echo ======================================================================
 echo "Backup Start $(date)"
 echo ======================================================================
 
-#mongodump -h 192.168.1.198 --authenticationDatabase "admin"  --username=druser --db=exercise --collection=answers --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' -o mongobackup-`date +%Y-%m-%d-%H-%M-%S`.gpg
+#mongodump -h 192.168.1.198 --authenticationDatabase "admin" --username=druser --db=exercise --collection=answers --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' -o mongobackup-`date +%Y-%m-%d-%H-%M-%S`.gpg
 
 
 #consider removing failed attempts.
