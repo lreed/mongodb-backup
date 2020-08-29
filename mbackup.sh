@@ -7,6 +7,7 @@ set -eo pipefail # Fail fast
 # Setup Backup Directory
 ## sudo mkdir -p /var/backups/mongodb
 ## chown mbackup:mbackup /var/backups/mongodb
+## or whatever user plan to use for backups
 # Desing notes
 ## using a combination of piped commands to reduce unencrypted files and reduce disk space usage etc. 
 
@@ -14,7 +15,7 @@ set -eo pipefail # Fail fast
 # Add List option
 # Add option to make output quiet
 
-# Set defaults
+# Set defaults for variables that can be overidden on config file or command line options
 DBHOST="127.0.0.1"
 
 # Port that mongo is listening on
@@ -24,14 +25,27 @@ DBPORT="27017"
 BACKUPDIR="/var/backups/mongodb"
 
 
-# Should really do this
-# also need to have a way to use a secure file for dbpassword 
-# could also add the code here to pull configs from a config file
-# External config - override default values set above
+# To use a config file to set options
+# Create a file "/etc/[default|sysconfig]/mbackup (use the relevant path for distro)
+# Uncomment option to set for automated uses
+#DBHOST="127.0.0.1"
+#DBPORT="27017"
+#BACKUPDIR="/var/backups/mongodb"
+#DBNAME=""
+#COLLECTION=""
+#DBUSERNAME=""
+#DBAUTHDB=""
+#PREFIX="" # Prefix to use to label backup files
+#DBPASSWORD=""
+#DBAUTHDB="admin"
+#PREFIX=""
+
+
+
+
 for x in default sysconfig; do
-  if [ -f "/etc/$x/automongobackup" ]; then
-    # shellcheck source=/dev/null
-    source /etc/$x/automongobackup
+  if [ -f "/etc/$x/mbackup" ]; then
+    source /etc/$x/mbackup
   fi
 done
 
@@ -41,11 +55,6 @@ while test $# -gt 0; do
     -dbhost)
       shift
       DBHOST=$1
-      shift
-      ;;
-    -dbport)
-      shift
-      DBPORT=$1
       shift
       ;;
     -dbport)
