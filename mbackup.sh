@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eo pipefail # Fail fast 
+#set -eo pipefail # Fail fast 
 
 # Setup Details
 # Setup users for backup
@@ -24,6 +24,8 @@ DBPORT="27017"
 # Backup directory location e.g /backups
 BACKUPDIR="/var/backups/mongodb"
 
+# PATH to MONGO UTILS
+MONGOPATH="/usr/bin/"
 
 # To use a config file to set options
 # Create a file "/etc/[default|sysconfig]/mbackup (use the relevant path for distro)
@@ -40,7 +42,10 @@ BACKUPDIR="/var/backups/mongodb"
 #DBAUTHDB="admin"
 #PREFIX=""
 
-
+# Add a verbose option but set default to quiet .
+# Add a comment to say backingup please wait ...
+# Add GPGIDENTITY
+# USE PASWORD from file
 
 
 for x in default sysconfig; do
@@ -87,6 +92,11 @@ while test $# -gt 0; do
       PREFIX=$1
       shift
       ;;
+    -mongopath)
+      shift
+      MONGOPATH=$1
+      shift
+      ;;
     *)
       echo "$1 is not a recognized flag!"
       # Could add usage here
@@ -95,9 +105,7 @@ while test $# -gt 0; do
   esac
 done
 
-# Could add option to create direcotry if it does not exist - or not..
-
-# Use conditioanls to construct the query to use based on what options exist
+# using simple fall-through process to construct options to run Mongo Backup
 
 # Do we need to use a username/password?
 if [ "$DBUSERNAME" ]; then
@@ -142,7 +150,7 @@ if [ ! -w "${BACKUPDIR}" ]; then
   exit 1 
 fi 
 
-echo "will run mongodump -h ${DBHOST}:${DBPORT} ${OPT} --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' -o ${BACKUPFILE}-`date +%Y-%m-%d-%H-%M-%S`.gpg"
+echo "will run mongodump -h ${DBHOST}:${DBPORT} ${OPT} --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' ${FULLFILEPATH}"
 
 
 
@@ -155,16 +163,26 @@ echo ======================================================================
 
 FULLFILEPATH="${BACKUPDIR}/${BACKUPFILE}-`date +%Y-%m-%d-%H-%M-%S`.gpg"
 
-mongodump -h ${DBHOST}:${DBPORT} ${OPT} --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' -o ${FULLFILEPATH} 
+${MONGOPATH}/mongodump -h ${DBHOST}:${DBPORT} ${OPT} --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' -o ${FULLFILEPATH}.processing
+#SUCCESS="$?"
+# Maybe set this as a SUCCESS and if not remove failed files
+#echo "Success is $SUCCESS"
+#if [ ${SUCCESS} -eq 0 ] ; then 
+#  mv ${FULLFILEPATH}.processing ${FULLFILEPATH}
+#  echo "${FULLFILEPATH} was backed up"
+#else 
+#  echo "There as a problem with the backup"
+#  # Uncomment this is want to remove failed backup files
+#  echo "Removing failed backup attempt file ${FULLFILEPATH}"
+#  rm ${FULLFILEPATH}.processing
+#fi
 
-if [ $? -eq 0 ] ; then 
-  echo "${FULLFILEPATH} was backed up"
-else 
-  echo "There as a problem with the backup"
+# Clean up
+# remove any leftover processing files if something went wrong.
+if [ -f ${FULLFILEPATH}.processing ] ; then 
+  echo "Removing leftover processing file ${FULLFILEPATH}.processing"
+  rm ${FULLFILEPATH}.processing
 fi
-
-#mongodump -h 192.168.1.198 --authenticationDatabase "admin" --username=druser --db=exercise --collection=answers --gzip --archive | gpg --encrypt -r 'mbackup@auth0exercise.com' -o mongobackup-`date +%Y-%m-%d-%H-%M-%S`.gpg
-
 
 #consider removing failed attempts.
 
