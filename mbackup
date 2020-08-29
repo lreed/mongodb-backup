@@ -1,0 +1,12 @@
+# Uncomment option to set for automated uses
+#DBHOST="127.0.0.1"
+#DBPORT="27017"
+#BACKUPDIR="/var/backups/mongodb"
+#DBNAME=""
+#COLLECTION=""
+#DBUSERNAME=""
+#DBAUTHDB=""
+#PREFIX="" # Prefix to use to label backup files
+#DBPASSWORD=""
+#DBAUTHDB="admin"
+#PREFIX=""
