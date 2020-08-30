@@ -16,7 +16,7 @@
 # Add option to input the -r identity of the GPG setup.... 
 
 # Set default behavior of script to perform backups
-BACKUP="true"
+OPERATION="backup"
 
 # Set defaults for variables that can be overridden on config file or command line options
 DBHOST="127.0.0.1"
@@ -35,7 +35,7 @@ MONGOPATH="/usr/bin"
 # To use a config file to set options
 # Create a file "/etc/[default|sysconfig]/mbackup (use the relevant path for distro)
 # Uncomment and set option to use for automated uses
-#BACKUP="true"
+#OPERATION="backup"
 #DBHOST="127.0.0.1"
 #DBPORT="27017"
 #BACKUPDIR="/var/backups/mongodb"
@@ -56,7 +56,7 @@ MONGOPATH="/usr/bin"
 
 for x in default sysconfig; do
   if [ -f "/etc/$x/mbackup" ]; then
-    echo "NOTICE: Using parameters from config file /etc/$x/mbackup"
+    #echo "NOTICE: Using parameters from config file /etc/$x/mbackup"
     source /etc/$x/mbackup
   fi
 done
@@ -114,14 +114,19 @@ while test $# -gt 0; do
       MONGOPATH=$1
       shift
       ;;
-    -b | -backup )
+    -b | --backup )
       shift
-      BACKUP="true"
+      OPERATION="backup"
       shift
       ;;
-    -r | -restore )
+    -r | --restore )
       shift
-      BACKUP="true"
+      OPERATION="restore"
+      shift
+      ;;
+    -l | --list )
+      shift
+      OPERATION="list"
       shift
       ;;
     *)
@@ -221,7 +226,7 @@ backup () {
 
 }
 
-  clean_up () {
+clean_up () {
   # Clean up
   # remove any leftover processing files if something went wrong.
   if [ -f ${FULLFILEPATH}.processing ] ; then 
@@ -230,14 +235,47 @@ backup () {
   fi
 }
 
+list_files () {
+  pushd ${BACKUPDIR}
+  #completed_backup_files="$(ls -1t ${BACKUPDIR}/*.gpg 2> /dev/null)"
+  completed_backup_files="$(ls -1t *.gpg 2> /dev/null)"
+  #num_completed_backup_files=$(echo $completed_backup_files | wc -l)
+  #echo "${completed_backup_files} | wc -l "
+  echo "${num_completed_backup_files} Completed Backup files in ${BACKUPDIR}"
+  echo "${completed_backup_files}"
+  #for files in $(echo $completed_backup_files) ; do
+  #  echo "${files##*/}"
+  #done
+
+
+  popd > /dev/null
+}
+
 # Main
-if [ "${BACKUP}" ]; then
-  backup
-  clean_up
-fi 
+# Probabaly change this to a Case
+# Add List option
+#if [ "${OPERATION}" == "backup" ]; then
+# backup
+# clean_up
+#fi 
+
+case "${OPERATION}" in 
+  backup)
+    backup
+    clean_up
+    ;;
+  restore)
+    echo "Need to create restore"
+    ;;
+  list)
+    list_files
+    ;;
+esac
 
 # If restore do restore
 # restore
+
+#Main
 
 
 
