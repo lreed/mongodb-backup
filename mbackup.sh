@@ -246,7 +246,7 @@ backup () {
 
   if [ "${STATUS}" -eq 0 ] ; then
     echo "${FULLFILEPATH} was successfully created"
-    mv ${FULLFILEPATH}.processing ${FULLFILEPATH}
+    mv "${FULLFILEPATH}".processing "${FULLFILEPATH}"
   else
     echo "There was a problem creating backup file ${FULLFILEPATH}"
   fi
@@ -258,14 +258,14 @@ clean_up () {
   # remove any leftover processing files if something went wrong.
   if [ -f "${FULLFILEPATH}".processing ] ; then 
     echo "Removing leftover processing file ${FULLFILEPATH}.processing"
-    rm ${FULLFILEPATH}.processing
+    rm "${FULLFILEPATH}".processing
   fi
 }
 
 list_files () {
   pushd ${BACKUPDIR} > /dev/null
   echo "Backup files currently in ${BACKUPDIR}"
-  completed_backup_files="$(ls -1th *.gpg 2> /dev/null)"
+  completed_backup_files="$(ls -1th ./*.gpg 2> /dev/null)"
   echo "${completed_backup_files}"
   popd > /dev/null
 }
