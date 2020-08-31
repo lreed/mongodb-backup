@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#TODO
+# Add some usage output
+
 # Setup Details
 # Setup users for backup
 # Setup GPG Key
@@ -28,9 +31,6 @@ MONGOPATH="/usr/bin"
 # Set Verbose as default
 QUIET="false"
 
-#TODO
-# Add some usage output
-
 # To use a config file to set options
 # Create a file "/etc/[default|sysconfig]/mbackup (use the relevant path for distro)
 # Uncomment and set option to use for automated uses
@@ -48,11 +48,6 @@ QUIET="false"
 #DBAUTHDB="admin"
 #PREFIX=""
 #GPGRECIPIENT=""
-
-# Add a verbose option but set default to quiet .
-# Add a comment to say backing up please wait ...
-# Add GPGIDENTITY
-
 
 for x in default sysconfig; do
   if [ -f "/etc/$x/mbackup" ]; then
@@ -159,7 +154,7 @@ backup () {
 
   # Check required directories
   if [ ! -d "${BACKUPDIR}" ] ; then
-    echo "${BACKUPDIR} does not exist.  Please please create the directory with write permissions for user $(whoami) before proceeding"
+    echo "${BACKUPDIR} does not exist.  Please create the directory with write permissions for user $(whoami) before proceeding"
     exit 1
   fi
 
