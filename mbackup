@@ -1,4 +1,5 @@
-# Uncomment option to set for automated uses
+# Uncomment and modify options to set for automated uses
+#OPERATION="backup"
 #DBHOST="127.0.0.1"
 #DBPORT="27017"
 #BACKUPDIR="/var/backups/mongodb"
@@ -8,5 +9,7 @@
 #DBAUTHDB=""
 #PREFIX="" # Prefix to use to label backup files
 #DBPASSWORD=""
+#DBPASSFILE="/home/mbackup/dbpassfile"
 #DBAUTHDB="admin"
 #PREFIX=""
+#GPGRECIPIENT=""
