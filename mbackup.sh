@@ -11,7 +11,6 @@
 ## using a combination of piped commands to reduce unencrypted files and reduce disk space usage etc. 
 
 # TODO
-# Add List option
 # Add option to make output quiet
 # Add option to input the -r identity of the GPG setup.... 
 
@@ -48,6 +47,7 @@ MONGOPATH="/usr/bin"
 #DBPASSFILE=""
 #DBAUTHDB="admin"
 #PREFIX=""
+#GPGRECIPIENT=""
 
 # Add a verbose option but set default to quiet .
 # Add a comment to say backing up please wait ...
@@ -114,6 +114,16 @@ while test $# -gt 0; do
       MONGOPATH=$1
       shift
       ;;
+    -gpgrecipient)
+      shift
+      GPGRECIPIENT=$1
+      shift
+      ;;
+    -q | --quiet)
+      shift
+      QUIET="true"
+      shift
+      ;;
     -b | --backup )
       shift
       OPERATION="backup"
@@ -136,6 +146,12 @@ while test $# -gt 0; do
       ;;
   esac
 done
+
+# Check for prerequisites
+if [ ! ${GPGRECIPIENT} ] ; then
+  echo "No GPG RECIPIENT has been set.  Please correct this for Encryption to work"
+  exit 1
+fi
 
 
 backup () {
@@ -205,6 +221,12 @@ backup () {
     fi
   fi
 
+  # Set quiet mode for Mongodump output
+  if [ ${QUIET} == "true" ] ; then 
+    OPT="${OPT} --quiet"
+  fi
+
+
   echo
   echo "Backup of Database Server - $HOST on $DBHOST"
   echo ======================================================================
@@ -216,12 +238,20 @@ backup () {
 
   # Call Mongodump with options
   # note the "--archive" allows output to be named and if not then goes to STDOUT so can pipe to gpg
-  # Use Conditonal to deal with problems around file input for dbpassfile
+  # Use Conditional to deal with problems around file input for dbpassfile
   if [ ${use_dbpassfile} != "true" ] ; then
-    echo "use_dbpassfile is ${use_dbpassfile}"
-    ${MONGOPATH}/mongodump --host ${DBHOST}:${DBPORT} --gzip --archive $OPT | gpg --encrypt -r 'mbackup@auth0exercise.com' -o ${FULLFILEPATH}.processing
+    ${MONGOPATH}/mongodump --host ${DBHOST}:${DBPORT} --gzip --archive $OPT | gpg --encrypt -r ${GPGRECIPIENT} -o ${FULLFILEPATH}.processing
+    STATUS=$?
   else 
-  ${MONGOPATH}/mongodump --host ${DBHOST}:${DBPORT} --gzip --archive ${OPT} < ${DBPASSFILE} | gpg --encrypt -r 'mbackup@auth0exercise.com' -o ${FULLFILEPATH}.processing
+    ${MONGOPATH}/mongodump --host ${DBHOST}:${DBPORT} --gzip --archive ${OPT} < ${DBPASSFILE} | gpg --encrypt -r ${GPGRECIPIENT} -o ${FULLFILEPATH}.processing
+    STATUS=$?
+  fi
+
+  if [ "${STATUS}" -eq 0 ] ; then
+    echo "${FULLFILEPATH} was successfully created"
+    mv ${FULLFILEPATH}.processing ${FULLFILEPATH}
+  else
+    echo "There was a problem creating backup file ${FULLFILEPATH}"
   fi
 
 }
@@ -236,29 +266,14 @@ clean_up () {
 }
 
 list_files () {
-  pushd ${BACKUPDIR}
-  #completed_backup_files="$(ls -1t ${BACKUPDIR}/*.gpg 2> /dev/null)"
-  completed_backup_files="$(ls -1t *.gpg 2> /dev/null)"
-  #num_completed_backup_files=$(echo $completed_backup_files | wc -l)
-  #echo "${completed_backup_files} | wc -l "
-  echo "${num_completed_backup_files} Completed Backup files in ${BACKUPDIR}"
+  pushd ${BACKUPDIR} > /dev/null
+  echo "Backup files currently in ${BACKUPDIR}"
+  completed_backup_files="$(ls -1th *.gpg 2> /dev/null)"
   echo "${completed_backup_files}"
-  #for files in $(echo $completed_backup_files) ; do
-  #  echo "${files##*/}"
-  #done
-
-
   popd > /dev/null
 }
 
 # Main
-# Probabaly change this to a Case
-# Add List option
-#if [ "${OPERATION}" == "backup" ]; then
-# backup
-# clean_up
-#fi 
-
 case "${OPERATION}" in 
   backup)
     backup
@@ -272,17 +287,11 @@ case "${OPERATION}" in
     ;;
 esac
 
-# If restore do restore
-# restore
-
-#Main
-
-
 
 # Future improvements
 # Add options for SSL connections
 # Consider adding a simple way to include ad-hoc options on the command line instead of predefining every option. 
-# Add loging options
+# Add logging options
 # add options to include replicate sets etc.  "--oplog"
 
 # References
