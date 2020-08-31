@@ -143,7 +143,7 @@ while test $# -gt 0; do
 done
 
 # Check for prerequisites
-if [ ! ${GPGRECIPIENT} ] ; then
+if [ ! "${GPGRECIPIENT}" ] ; then
   echo "No GPG RECIPIENT has been set.  Please correct this for Encryption to work"
   exit 1
 fi
@@ -206,7 +206,7 @@ backup () {
       # Use a password supplied in a (secure?) file
       # This could be done better
       if [ "${DBPASSFILE}" ]; then
-        if [ -s ${DBPASSFILE} ] ; then
+        if [ -s "${DBPASSFILE}" ] ; then
           echo "NOTICE: Using contents of ${DBPASSFILE} for password for Backup"
           # Can't figure out the correct way to pass OPTS with "<" so will deal at execution time
 	  #OPT="${OPT} < ${DBPASSFILE}"
@@ -218,7 +218,7 @@ backup () {
 
   # Why is this broken?
   # Set quiet mode for Mongodump output
-  if [ ${QUIET} == "true" ] ; then 
+  if [ "${QUIET}" == "true" ] ; then 
     OPT="${OPT} --quiet"
   fi
 
@@ -236,7 +236,7 @@ backup () {
   # Call Mongodump with options
   # note the "--archive" allows output to be named and if not then goes to STDOUT so can pipe to gpg
   # Use Conditional to deal with problems around file input for dbpassfile
-  if [ ${use_dbpassfile} != "true" ] ; then
+  if [ "${use_dbpassfile}" != "true" ] ; then
     ${MONGOPATH}/mongodump --host ${DBHOST}:${DBPORT} --gzip --archive $OPT | gpg --encrypt -r ${GPGRECIPIENT} -o ${FULLFILEPATH}.processing
     STATUS=$?
   else 
@@ -256,7 +256,7 @@ backup () {
 clean_up () {
   # Clean up
   # remove any leftover processing files if something went wrong.
-  if [ -f ${FULLFILEPATH}.processing ] ; then 
+  if [ -f "${FULLFILEPATH}".processing ] ; then 
     echo "Removing leftover processing file ${FULLFILEPATH}.processing"
     rm ${FULLFILEPATH}.processing
   fi
