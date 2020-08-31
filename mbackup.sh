@@ -10,10 +10,6 @@
 # Design notes
 ## using a combination of piped commands to reduce unencrypted files and reduce disk space usage etc. 
 
-# TODO
-# Add option to make output quiet
-# Add option to input the -r identity of the GPG setup.... 
-
 # Set default behavior of script to perform backups
 OPERATION="backup"
 
@@ -29,7 +25,11 @@ BACKUPDIR="/var/backups/mongodb"
 # PATH to MONGO UTILS
 MONGOPATH="/usr/bin"
 
+# Set Verbose as default
+QUIET="false"
 
+#TODO
+# Add some usage output
 
 # To use a config file to set options
 # Create a file "/etc/[default|sysconfig]/mbackup (use the relevant path for distro)
@@ -221,20 +221,22 @@ backup () {
     fi
   fi
 
+  # Why is this broken?
   # Set quiet mode for Mongodump output
   if [ ${QUIET} == "true" ] ; then 
     OPT="${OPT} --quiet"
   fi
 
+  # Get a starting timestamp 
+  DATE=$(date +%Y-%m-%d-%H-%M-%S)
 
   echo
   echo "Backup of Database Server - $HOST on $DBHOST"
   echo ======================================================================
-  # Grab a timestamp to use as the start of backup operations
-  echo "Backup Start $(date)"
+  echo "Backup Start ${DATE}"
   echo ======================================================================
 
-  FULLFILEPATH="${BACKUPDIR}/${BACKUPFILE}-`date +%Y-%m-%d-%H-%M-%S`.gpg"
+  FULLFILEPATH="${BACKUPDIR}/${BACKUPFILE}-${DATE}.gpg"
 
   # Call Mongodump with options
   # note the "--archive" allows output to be named and if not then goes to STDOUT so can pipe to gpg
