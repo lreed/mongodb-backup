@@ -116,7 +116,7 @@ while test $# -gt 0; do
       shift
       QUIET="true"
       ;;
-    -b)
+    -b | --backup)
       shift
       OPERATION="backup"
       ;;
@@ -263,6 +263,11 @@ list_files () {
 # Check for prerequisites
 if [ ! "${GPGRECIPIENT}" ] ; then
   echo "No GPG RECIPIENT has been set.  Please correct this for Encryption to work"
+  exit 1
+fi
+
+if [ ! "${OPERATION}" ] ; then 
+  echo "Please set an operation type: { -b | --backup, -r | --restore, -l | --list }"
   exit 1
 fi
 
