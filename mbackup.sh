@@ -160,13 +160,13 @@ backup () {
   # Do we need to backup only a specific database?
   if [ "$DBNAME" ]; then
     OPT="$OPT -d $DBNAME"
-    BACKUPFILE="${BACKUPFILE}-${DBNAME}"
+    BACKUPFILE="${BACKUPFILE}-db_${DBNAME}"
   fi
 
   # Do we need to backup only a specific collection?
   if [ "${COLLECTION}" ]; then
     OPT="${OPT} --collection ${COLLECTION}"
-    BACKUPFILE="${BACKUPFILE}-${COLLECTION}"
+    BACKUPFILE="${BACKUPFILE}-col_${COLLECTION}"
   fi
 
 
@@ -220,7 +220,7 @@ backup () {
   echo "Backup Start ${DATE}"
   echo ======================================================================
 
-  FULLFILEPATH="${BACKUPDIR}/${BACKUPFILE}-${DATE}.gpg"
+  FULLFILEPATH="${BACKUPDIR}/${BACKUPFILE}-${DATE}.gz.gpg"
 
   # Call Mongodump with options
   # note the "--archive" allows output to be named and if not then goes to STDOUT so can pipe to gpg
