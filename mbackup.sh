@@ -206,7 +206,6 @@ backup () {
     fi
   fi
 
-  # Why is this broken?
   # Set quiet mode for Mongodump output
   if [ "${QUIET}" == "true" ] ; then
     OPT="${OPT} --quiet"
