@@ -1,33 +1,22 @@
 # mongodb-backup
 MongoDB backup 
-./mbackup.sh  -dbhost 127.0.0.1 -prefix mbackup -dbuser druser -database exercise -dbauthdb admin -collection answers
+./mbackup.sh  -dbhost HOSTNAME/IP -prefix PREFIX -dbuser DBUSER -database DBNAME -dbauthdb DBAUTH -collection COLLECTION
+
+
+Setup Notes:
 
 #On MongoDB host
 Create user for Backup and Restores (druser)
 
 e.g.
 > db.createUser(
-...    {
-...      user: "druser",
-...      pwd:  passwordPrompt(),
-...      roles: [ { role: "backup", db: "admin" },
-...               { role: "restore", db: "admin" } ]
-...    }
-...  )
-Enter password: 
-Successfully added user: {
-	"user" : "druser",
-	"roles" : [
-		{
-			"role" : "backup",
-			"db" : "admin"
-		},
-		{
-			"role" : "restore",
-			"db" : "admin"
-		}
-	]
-}
+    {
+      user: "druser",
+      pwd:  passwordPrompt(),
+      roles: [ { role: "backup", db: "admin" },
+               { role: "restore", db: "admin" } ]
+    }
+  )
 
 Creates druser / druser (Disaster Recover user for Backups and restores using Built-in roles)
 
@@ -37,14 +26,6 @@ Creates druser / druser (Disaster Recover user for Backups and restores using Bu
 Create a user “mbackup” that will hold the GPG setup and manage the MongoDB Backups
 
 $ sudo adduser  --gecos "MongoDB Backup User" mbackup
-Adding user `mbackup' ...
-Adding new group `mbackup' (1001) ...
-Adding new user `mbackup' (1001) with group `mbackup' ...
-Creating home directory `/home/mbackup' ...
-Copying files from `/etc/skel' ...
-Enter new UNIX password: 
-Retype new UNIX password: 
-passwd: password updated successfully
 
 Create GPG keys / setup
 
@@ -92,7 +73,7 @@ Is this correct? (y/N) y
 GnuPG needs to construct a user ID to identify your key.
 
 Real name: Mongo Backup Key
-Email address: mbackup@auth0exercise.com
+Email address: mbackup@example.com
 Comment: Mongo Backup Key
 You selected this USER-ID:
     "Mongo Backup Key (Mongo Backup Key) <mbackup@example.com>"
