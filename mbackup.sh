@@ -1,9 +1,8 @@
 #!/bin/bash
-
-#TODO
-# Add some usage output
+#set -x
 
 # Setup Details
+# See Readme file
 # Setup users for backup
 # Setup GPG Key
 # Setup Backup Directory
@@ -11,10 +10,10 @@
 ## chown mbackup:mbackup /var/backups/mongodb
 ## or whatever user plan to use for backups
 # Design notes
-## using a combination of piped commands to reduce unencrypted files and reduce disk space usage etc. 
+## using a combination of piped commands to reduce unencrypted files and reduce disk space usage etc.
 
 # Set default behavior of script to perform backups
-OPERATION="backup"
+#OPERATION="backup"
 
 # Set defaults for variables that can be overridden on config file or command line options
 DBHOST="127.0.0.1"
@@ -49,13 +48,11 @@ QUIET="false"
 #PREFIX=""
 #GPGRECIPIENT=""
 
-for x in default sysconfig; do
-  if [ -f "/etc/$x/mbackup" ]; then
-    #echo "NOTICE: Using parameters from config file /etc/$x/mbackup"
-    source /etc/$x/mbackup
-  fi
-done
-
+# collect defaults
+if [ -f "/etc/default/mbackup" ]; then
+  echo "NOTICE: Using parameters from config file /etc/default/mbackup"
+  source /etc/default/mbackup
+fi
 
 while test $# -gt 0; do
   case "$1" in
@@ -114,40 +111,30 @@ while test $# -gt 0; do
       GPGRECIPIENT=$1
       shift
       ;;
+    # Single argument flags
     -q | --quiet)
       shift
       QUIET="true"
-      shift
       ;;
-    -b | --backup )
+    -b)
       shift
       OPERATION="backup"
-      shift
       ;;
-    -r | --restore )
+    -r | --restore)
       shift
       OPERATION="restore"
-      shift
       ;;
-    -l | --list )
+    -l | --list)
       shift
       OPERATION="list"
-      shift
       ;;
-    *)
-      echo "$1 is not a recognized flag!"
-      # Could add usage here
+    # Catch all
+    -h | --help | * )
+      echo "Usage: $0 (-b|--backup, -r|--restore, -l|--list) -dbhost [hostname] -dbport [port] -database [database] -collection [collection] -dbuser [dbuser] -dbpassword [dbpassword] -dbpassfile [password file Full Path] -dbauthdb [auth db name] -gpgrecipient [GPG Identity] -prefix [prefix to add to backup files] -mongopath [path to mongodump]"
       exit 1;
       ;;
   esac
 done
-
-# Check for prerequisites
-if [ ! "${GPGRECIPIENT}" ] ; then
-  echo "No GPG RECIPIENT has been set.  Please correct this for Encryption to work"
-  exit 1
-fi
-
 
 backup () {
   # using simple fall-through process to construct options to run MongoDB Backup
@@ -164,7 +151,7 @@ backup () {
   fi
 
 
-  if [ "${PREFIX}" ] ; then 
+  if [ "${PREFIX}" ] ; then
     BACKUPFILE="${PREFIX}-${DBHOST}"
   else
     BACKUPFILE="${DBHOST}"
@@ -191,6 +178,9 @@ backup () {
     # Set DB to use for Credentials in Mongo
     if [ "${DBAUTHDB}" ]; then
         OPT="$OPT --authenticationDatabase=$DBAUTHDB"
+    else
+      echo "Please set the --authenticationDatabase option with the '-dbauthdb' [DBAUTHDB in configuration file] option when using a named database"
+      exit 1
     fi
 
     # Should have a way to pull this from a more secure file.
@@ -218,11 +208,11 @@ backup () {
 
   # Why is this broken?
   # Set quiet mode for Mongodump output
-  if [ "${QUIET}" == "true" ] ; then 
+  if [ "${QUIET}" == "true" ] ; then
     OPT="${OPT} --quiet"
   fi
 
-  # Get a starting timestamp 
+  # Get a starting timestamp
   DATE=$(date +%Y-%m-%d-%H-%M-%S)
 
   echo
@@ -256,7 +246,7 @@ backup () {
 clean_up () {
   # Clean up
   # remove any leftover processing files if something went wrong.
-  if [ -f "${FULLFILEPATH}".processing ] ; then 
+  if [ -f "${FULLFILEPATH}".processing ] ; then
     echo "Removing leftover processing file ${FULLFILEPATH}.processing"
     rm "${FULLFILEPATH}".processing
   fi
@@ -265,19 +255,25 @@ clean_up () {
 list_files () {
   pushd ${BACKUPDIR} > /dev/null
   echo "Backup files currently in ${BACKUPDIR}"
-  completed_backup_files="$(ls -1th ./*.gpg 2> /dev/null)"
-  echo "${completed_backup_files}"
+  ls -1th ./*.gpg 2> /dev/null | cut -c3- 2> /dev/null
   popd > /dev/null
 }
 
 # Main
+
+# Check for prerequisites
+if [ ! "${GPGRECIPIENT}" ] ; then
+  echo "No GPG RECIPIENT has been set.  Please correct this for Encryption to work"
+  exit 1
+fi
+
 case "${OPERATION}" in 
   backup)
     backup
     clean_up
     ;;
   restore)
-    echo "Need to create restore"
+    echo "Option not yet implemented"
     ;;
   list)
     list_files
